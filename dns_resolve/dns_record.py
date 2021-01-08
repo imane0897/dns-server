@@ -14,3 +14,12 @@ def search(dns_dict, domain_list):
         return search(dns_dict[domain_list.pop()], domain_list)
     else:
         return dns_dict[domain_list[-1]]
+
+
+def update(dns_dict, domain_list, record):
+    if domain_list[-1] not in dns_dict:
+        return False
+    elif len(domain_list) > 1:
+        return update(dns_dict[domain_list.pop()], domain_list, record)
+    else:
+        dns_dict[domain_list[-1]] = record
