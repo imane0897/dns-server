@@ -1,5 +1,5 @@
 import socket
-from dns_resolve import insert, search, update
+from dns_resolve import insert, search, update, query
 
 IP = '127.0.0.1'
 PORT = 8123
@@ -10,17 +10,14 @@ def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((IP, PORT))
     print('DNS is listening on {0}:{1} ...'.format(IP, PORT))
-    insert(DNS_CACHE, 'test.com'.split('.'), '1.1.1.1')
-    insert(DNS_CACHE, 'localhost'.split('.'), '127.0.0.1')
-    insert(DNS_CACHE, 'google.com'.split('.'), '172.1.2.3')
-    insert(DNS_CACHE, 'test.org'.split('.'), '3.1.2.1')
-    print(DNS_CACHE)
-    print(search(DNS_CACHE, 'test.com'.split('.')))
-    update(DNS_CACHE, 'test.com'.split('.'), '1.1.2.3')
-    print(search(DNS_CACHE, 'test.com'.split('.')))
-    # while True:
-    #     data, _ = sock.recvfrom(255)
-    #     print(search(DNS_CACHE, data.decode('utf-8').strip('\n').split('.')))
+
+    while True:
+        data, _ = sock.recvfrom(255)
+        domain_name = data.decode('utf-8').strip('\n')
+        result = search(DNS_CACHE, domain_name.split('.'))
+        if not result:
+            result = query(DNS_CACHE, domain_name)
+        print(result)
 
 
 if __name__ == '__main__':
