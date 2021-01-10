@@ -34,9 +34,13 @@ def query(dns_dict, domain_name):
     url = base_url + 'name=' + domain_name + '&type=' + dns_type
     headers = {'accept': 'application/dns-json'}
     r = requests.get(url, headers=headers)
-    record = []
-    answer = r.json()['Answer']
-    for item in answer:
-        record.append(item['data'])
-    insert(dns_dict, domain_name.split('.'), record)
-    return record
+    try:
+        answer = r.json()['Answer']
+    except:
+        return None
+    else:
+        record = []
+        for item in answer:
+            record.append(item['data'])
+        insert(dns_dict, domain_name.split('.'), record)
+        return record
