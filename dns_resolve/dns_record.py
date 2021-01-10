@@ -1,4 +1,5 @@
-import socket
+import json
+import requests
 
 def insert(dns_dict, domain_list, record):
     if len(domain_list) > 1:
@@ -28,6 +29,14 @@ def update(dns_dict, domain_list, record):
 
 
 def query(dns_dict, domain_name):
-    record = socket.gethostbyname(domain_name)
+    base_url = 'https://cloudflare-dns.com/dns-query?'
+    dns_type = 'A'
+    url = base_url + 'name=' + domain_name + '&type=' + dns_type
+    headers = {'accept': 'application/dns-json'}
+    r = requests.get(url, headers=headers)
+    record = []
+    answer = r.json()['Answer']
+    for item in answer:
+        record.append(item['data'])
     insert(dns_dict, domain_name.split('.'), record)
     return record
