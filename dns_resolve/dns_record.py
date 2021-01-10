@@ -15,8 +15,10 @@ def search(dns_dict, domain_list):
         return None
     elif len(domain_list) > 1:
         return search(dns_dict[domain_list.pop()], domain_list)
-    else:
+    elif not isinstance(dns_dict[domain_list[-1]], dict):
         return dns_dict[domain_list[-1]]
+    else:
+        return None
 
 
 def update(dns_dict, domain_list, record):
@@ -36,6 +38,9 @@ def query(dns_dict, domain_name):
     r = requests.get(url, headers=headers)
     try:
         answer = r.json()['Answer']
+    except KeyError:
+        return None
+    # FIXME: other types of exceptions
     except:
         return None
     else:
