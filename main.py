@@ -12,12 +12,12 @@ def main():
     print('DNS is listening on {0}:{1} ...'.format(IP, PORT))
 
     while True:
-        data, addr = sock.recvfrom(255)
+        data, addr = sock.recvfrom(1024)
         domain_name = data.decode('utf-8').strip('\n')
         result = search(DNS_CACHE, domain_name.split('.'))
         if not result:
             result = query(DNS_CACHE, domain_name)
-        sock.sendto(str(result).encode(), addr)
+        sock.sendto((' '.join(result or '') + '\n').encode(), addr)
 
 
 if __name__ == '__main__':
