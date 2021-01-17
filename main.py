@@ -1,5 +1,5 @@
 import socket
-from dns_resolve import insert, search, update, query
+from dns_resolve import *
 
 IP = '127.0.0.1'
 PORT = 8123
@@ -13,11 +13,13 @@ def main():
 
     while True:
         data, addr = sock.recvfrom(1024)
-        domain_name = data.decode('utf-8').strip('\n')
-        result = search(DNS_CACHE, domain_name.split('.'))
-        if not result:
-            result = query(DNS_CACHE, domain_name)
-        sock.sendto((' '.join(result or '') + '\n').encode(), addr)
+        
+        result = response()
+        # result = search(DNS_CACHE, domain_name.split('.'))
+        # if not result:
+            # result = query(DNS_CACHE, domain_name)
+        # sock.sendto((' '.join(result or '') + '\n').encode(), addr)
+        sock.sendto(str(result).encode(), addr)
 
 
 if __name__ == '__main__':

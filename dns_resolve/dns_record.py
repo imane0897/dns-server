@@ -1,5 +1,22 @@
 import json
 import requests
+from dnslib.dns import *
+
+class Query():
+    pass
+
+
+class Response():
+    pass
+
+
+def resolve(domain_bytes):
+    d = DNSRecord.parse(domain_bytes)
+
+
+def response(domain_name, dns_type="A"):
+    return DNSRecord(DNSHeader(id=60416, qr=1, aa=1, ra=1), q=DNSQuestion("abc.com"), a=RR("abc.com", rdata=A("1.2.3.4")))
+
 
 def insert(dns_dict, domain_list, record):
     if len(domain_list) > 1:
@@ -39,9 +56,6 @@ def query(dns_dict, domain_name):
     try:
         answer = r.json()['Answer']
     except KeyError:
-        return None
-    # FIXME: other types of exceptions
-    except:
         return None
     else:
         record = []
