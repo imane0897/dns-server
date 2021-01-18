@@ -2,8 +2,32 @@ import json
 import requests
 from dnslib.dns import *
 
-class Query():
-    pass
+
+class Query(DNSRecord):
+    def __init__(self, header=None, questions=None,
+                 rr=None, q=None, a=None, auth=None, ar=None):
+        super().__init__(header, questions,
+                         rr, q, a, auth, ar)
+        self.domain_name, self.dns_type, self.dns_class = self.get_question()
+        self.id = self.get_header()
+
+    def get_header(self):
+        """
+        :returns: DNS packet ID
+        """
+        if self.header:
+            return self.header.id
+        return None
+
+    def get_question(self):
+        """
+        :returns: tuple(list of domain name split by dot, dns type, dns class)
+        """
+        if self.questions:
+            q = self.questions[0]
+            return list(i.decode('utf-8') for i in q.qname.label), QTYPE.get(q.qtype), CLASS.get(q.qclass)
+        else:
+            return None, None, None
 
 
 class Response():
@@ -11,11 +35,7 @@ class Response():
 
 
 def resolve(domain_bytes):
-    d = DNSRecord.parse(domain_bytes)
-
-
-def response(domain_name, dns_type="A"):
-    return DNSRecord(DNSHeader(id=60416, qr=1, aa=1, ra=1), q=DNSQuestion("abc.com"), a=RR("abc.com", rdata=A("1.2.3.4")))
+    q = Query.parse(domain_bytes)
 
 
 def insert(dns_dict, domain_list, record):
@@ -35,7 +55,7 @@ def search(dns_dict, domain_list):
     elif not isinstance(dns_dict[domain_list[-1]], dict):
         return dns_dict[domain_list[-1]]
     else:
-        return None
+        return query(dns_dict, domain_list.join('.'))
 
 
 def update(dns_dict, domain_list, record):
