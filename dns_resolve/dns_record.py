@@ -30,10 +30,8 @@ class DNSPacket(DNSRecord):
             return None, None, None
 
     def set_answer(self):
-        """
-        Set answer section in DNS packet.
-        """
-        pass
+        """Set answer section in DNS packet."""
+        self.add_answer(*RR.fromZone("abc.com A 1.2.3.4"))
 
     def insert(dns_dict, domain_list, record):
         """
@@ -47,9 +45,7 @@ class DNSPacket(DNSRecord):
             dns_dict[domain_list[-1]] = record
 
     def search(dns_dict, domain_list):
-        """
-        Search DNS record in local cache.
-        """
+        """Search DNS record in local cache."""
         if domain_list[-1] not in dns_dict:
             return None
         elif len(domain_list) > 1:
@@ -60,9 +56,7 @@ class DNSPacket(DNSRecord):
             return query(dns_dict, domain_list.join('.'))
 
     def update(dns_dict, domain_list, record):
-        """
-        Update DNS record in local cache.
-        """
+        """Update DNS record in local cache."""
         if domain_list[-1] not in dns_dict:
             return False
         elif len(domain_list) > 1:
@@ -71,9 +65,7 @@ class DNSPacket(DNSRecord):
             dns_dict[domain_list[-1]] = record
 
     def query(dns_dict, domain_name, dns_type):
-        """
-        Query Cloudflare DNS server.
-        """
+        """Query Cloudflare DNS server."""
         base_url = 'https://cloudflare-dns.com/dns-query?'
         url = base_url + 'name=' + domain_name + '&type=' + dns_type
         r = requests.get(url, headers={'accept': 'application/dns-json'})

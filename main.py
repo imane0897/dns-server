@@ -13,13 +13,10 @@ def main():
 
     while True:
         data, addr = sock.recvfrom(1024)
-        
-        result = response()
-        # result = search(DNS_CACHE, domain_name.split('.'))
-        # if not result:
-            # result = query(DNS_CACHE, domain_name)
-        # sock.sendto((' '.join(result or '') + '\n').encode(), addr)
-        sock.sendto(str(result).encode(), addr)
+        q = DNSRecord.parse(data)
+        q.set_answer()
+        print(q)
+        sock.sendto(str(q).encode('utf-8'), addr)
 
 
 if __name__ == '__main__':
