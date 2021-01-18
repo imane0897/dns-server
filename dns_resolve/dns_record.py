@@ -3,7 +3,7 @@ import requests
 from dnslib.dns import *
 
 
-class Query(DNSRecord):
+class DNSPacket(DNSRecord):
     def __init__(self, header=None, questions=None,
                  rr=None, q=None, a=None, auth=None, ar=None):
         super().__init__(header, questions,
@@ -29,57 +29,61 @@ class Query(DNSRecord):
         else:
             return None, None, None
 
+    def set_answer(self):
+        """
+        Set answer section in DNS packet.
+        """
+        pass
 
-class Response():
-    pass
+    def insert(dns_dict, domain_list, record):
+        """
+        Insert and save DNS record in local cache.
+        """
+        if len(domain_list) > 1:
+            if domain_list[-1] not in dns_dict:
+                dns_dict[domain_list[-1]] = {}
+            insert(dns_dict[domain_list.pop()], domain_list, record)
+        else:
+            dns_dict[domain_list[-1]] = record
 
-
-def resolve(domain_bytes):
-    q = Query.parse(domain_bytes)
-
-
-def insert(dns_dict, domain_list, record):
-    if len(domain_list) > 1:
+    def search(dns_dict, domain_list):
+        """
+        Search DNS record in local cache.
+        """
         if domain_list[-1] not in dns_dict:
-            dns_dict[domain_list[-1]] = {}
-        insert(dns_dict[domain_list.pop()], domain_list, record)
-    else:
-        dns_dict[domain_list[-1]] = record
+            return None
+        elif len(domain_list) > 1:
+            return search(dns_dict[domain_list.pop()], domain_list)
+        elif not isinstance(dns_dict[domain_list[-1]], dict):
+            return dns_dict[domain_list[-1]]
+        else:
+            return query(dns_dict, domain_list.join('.'))
 
+    def update(dns_dict, domain_list, record):
+        """
+        Update DNS record in local cache.
+        """
+        if domain_list[-1] not in dns_dict:
+            return False
+        elif len(domain_list) > 1:
+            return update(dns_dict[domain_list.pop()], domain_list, record)
+        else:
+            dns_dict[domain_list[-1]] = record
 
-def search(dns_dict, domain_list):
-    if domain_list[-1] not in dns_dict:
-        return None
-    elif len(domain_list) > 1:
-        return search(dns_dict[domain_list.pop()], domain_list)
-    elif not isinstance(dns_dict[domain_list[-1]], dict):
-        return dns_dict[domain_list[-1]]
-    else:
-        return query(dns_dict, domain_list.join('.'))
-
-
-def update(dns_dict, domain_list, record):
-    if domain_list[-1] not in dns_dict:
-        return False
-    elif len(domain_list) > 1:
-        return update(dns_dict[domain_list.pop()], domain_list, record)
-    else:
-        dns_dict[domain_list[-1]] = record
-
-
-def query(dns_dict, domain_name):
-    base_url = 'https://cloudflare-dns.com/dns-query?'
-    dns_type = 'A'
-    url = base_url + 'name=' + domain_name + '&type=' + dns_type
-    headers = {'accept': 'application/dns-json'}
-    r = requests.get(url, headers=headers)
-    try:
-        answer = r.json()['Answer']
-    except KeyError:
-        return None
-    else:
-        record = []
-        for item in answer:
-            record.append(item['data'])
-        insert(dns_dict, domain_name.split('.'), record)
-        return record
+    def query(dns_dict, domain_name, dns_type):
+        """
+        Query Cloudflare DNS server.
+        """
+        base_url = 'https://cloudflare-dns.com/dns-query?'
+        url = base_url + 'name=' + domain_name + '&type=' + dns_type
+        r = requests.get(url, headers={'accept': 'application/dns-json'})
+        try:
+            answer = r.json()['Answer']
+        except KeyError:
+            return None
+        else:
+            record = []
+            for item in answer:
+                record.append(item['data'])
+            insert(dns_dict, domain_name.split('.'), record)
+            return record
