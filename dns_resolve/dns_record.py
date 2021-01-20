@@ -2,7 +2,13 @@ import json
 import requests
 from dnslib.dns import *
 
-DNS_TYPES = ['A', 'AAAA', 'CNAME', 'NS']
+DNS_TYPES = ['A', 'NS', 'CNAME', 'SOA', 'NULL', 'PTR', 'HINFO', 'MX', 'TXT', 
+             'RP', 'AFSDB', 'SIG', 'KEY', 'AAAA', 'LOC', 'SRV', 'NAPTR', 'KX', 
+             'CERT', 'A6', 'DNAME', 'OPT', 'APL', 'DS', 'SSHFP',
+             'IPSECKEY', 'RRSIG', 'NSEC', 'DNSKEY', 'DHCID', 'NSEC3', 
+             'NSEC3PARAM', 'TLSA', 'HIP', 'CDS', 'CDNSKEY', 'OPENPGPKEY', 
+             'SPF', 'TKEY', 'TSIG', 'IXFR', 'AXFR', 'ANY', 'URI', 'CAA', 'TA', 
+             'DLV']
 
 
 class DNSPacket(DNSRecord):
@@ -34,9 +40,13 @@ class DNSPacket(DNSRecord):
             return None, None, None
 
     def set_answer(self, dns_dict):
-        """Set answer section in DNS packet."""
-        answer = self.search(dns_dict, self.domain_list)
-        self.add_answer(*RR.fromZone(answer))
+        """
+        Set answer section in DNS packet.
+        add_answer(*RR.fromZone("abc.com A 1.2.3.4"))
+        add_answer(RR("abc.com",QTYPE.CNAME,ttl=60,rdata=CNAME("ns.abc.com")))
+        """
+        answer = self.search(dns_dict, self.domain_list, self.dns_type)
+        self.add_answer(RR('.'.join(self.domain_list), self.dns_type, ttl=60, answer))
 
     def search(self, dns_dict, domain_list, dns_type):
         """
