@@ -1,13 +1,14 @@
+# %%
 import json
 import requests
 from dnslib.dns import *
 
-DNS_TYPES = ['A', 'NS', 'CNAME', 'SOA', 'NULL', 'PTR', 'HINFO', 'MX', 'TXT', 
-             'RP', 'AFSDB', 'SIG', 'KEY', 'AAAA', 'LOC', 'SRV', 'NAPTR', 'KX', 
+DNS_TYPES = ['A', 'NS', 'CNAME', 'SOA', 'NULL', 'PTR', 'HINFO', 'MX', 'TXT',
+             'RP', 'AFSDB', 'SIG', 'KEY', 'AAAA', 'LOC', 'SRV', 'NAPTR', 'KX',
              'CERT', 'A6', 'DNAME', 'OPT', 'APL', 'DS', 'SSHFP',
-             'IPSECKEY', 'RRSIG', 'NSEC', 'DNSKEY', 'DHCID', 'NSEC3', 
-             'NSEC3PARAM', 'TLSA', 'HIP', 'CDS', 'CDNSKEY', 'OPENPGPKEY', 
-             'SPF', 'TKEY', 'TSIG', 'IXFR', 'AXFR', 'ANY', 'URI', 'CAA', 'TA', 
+             'IPSECKEY', 'RRSIG', 'NSEC', 'DNSKEY', 'DHCID', 'NSEC3',
+             'NSEC3PARAM', 'TLSA', 'HIP', 'CDS', 'CDNSKEY', 'OPENPGPKEY',
+             'SPF', 'TKEY', 'TSIG', 'IXFR', 'AXFR', 'ANY', 'URI', 'CAA', 'TA',
              'DLV']
 
 
@@ -45,8 +46,10 @@ class DNSPacket(DNSRecord):
         add_answer(*RR.fromZone("abc.com A 1.2.3.4"))
         add_answer(RR("abc.com",QTYPE.CNAME,ttl=60,rdata=CNAME("ns.abc.com")))
         """
-        answer = self.search(dns_dict, self.domain_list, self.dns_type)
-        self.add_answer(RR('.'.join(self.domain_list), self.dns_type, ttl=60, answer))
+        record = self.search(dns_dict, self.domain_list, self.dns_type)
+        answer = '.'.join(self.domain_list) + ' ' + \
+            self.dns_type + ' ' + ' '.join(record)
+        self.add_answer(*RR.fromZone(answer))
 
     def search(self, dns_dict, domain_list, dns_type):
         """
@@ -58,7 +61,7 @@ class DNSPacket(DNSRecord):
         n = domain_list
         while n:
             if n[-1] not in d:
-                return self.query(dns_dict, domain_list.join('.'), dns_type)
+                return self.query(dns_dict, '.'.join(domain_list), dns_type)
             else:
                 d = d[n.pop()]
         if dns_type in d:
@@ -110,3 +113,11 @@ class DNSPacket(DNSRecord):
             return self.update(dns_dict[domain_list.pop()], domain_list, record)
         else:
             dns_dict[domain_list[-1]] = record
+
+
+data = b'\xd5\x01\x01 \x00\x01\x00\x00\x00\x00\x00\x01\x04bing\x03com\x00\x00\x01\x00\x01\x00\x00)\x10\x00\x00\x00\x00\x00\x00\x0c\x00\n\x00\x08N\x00\xfe\xdf\x19\xfejp'
+d = DNSPacket.parse(data)
+dd = {}
+d.set_answer(dd)
+print(dd)
+print(d)
