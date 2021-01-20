@@ -13,10 +13,9 @@ def main():
 
     while True:
         data, addr = sock.recvfrom(1024)
-        q = DNSRecord.parse(data)
-        q.set_answer()
-        print(q)
-        sock.sendto(str(q).encode('utf-8'), addr)
+        q = DNSPacket.parse(data)
+        q.set_answer(DNS_CACHE)
+        sock.sendto(q.pack(), addr)
 
 
 if __name__ == '__main__':

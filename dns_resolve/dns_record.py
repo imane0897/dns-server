@@ -2,13 +2,17 @@ import json
 import requests
 from dnslib.dns import *
 
+DNS_TYPES = ['A', 'AAAA', 'CNAME', 'NS']
+
 
 class DNSPacket(DNSRecord):
-    def __init__(self, header=None, questions=None,
-                 rr=None, q=None, a=None, auth=None, ar=None):
-        super().__init__(header, questions,
-                         rr, q, a, auth, ar)
-        self.domain_name, self.dns_type, self.dns_class = self.get_question()
+    def __init__(self, header=None, questions=None, rr=None, q=None, a=None, auth=None, ar=None):
+        """
+        :param header: dnslib.dns.DNSHeader
+        :param questions: list
+        """
+        super().__init__(header, questions, rr, q, a, auth, ar)
+        self.domain_list, self.dns_type, self.dns_class = self.get_question()
         self.id = self.get_header()
 
     def get_header(self):
@@ -29,43 +33,37 @@ class DNSPacket(DNSRecord):
         else:
             return None, None, None
 
-    def set_answer(self):
+    def set_answer(self, dns_dict):
         """Set answer section in DNS packet."""
-        self.add_answer(*RR.fromZone("abc.com A 1.2.3.4"))
+        answer = self.search(dns_dict, self.domain_list)
+        self.add_answer(*RR.fromZone(answer))
 
-    def insert(dns_dict, domain_list, record):
+    def search(self, dns_dict, domain_list, dns_type):
         """
-        Insert and save DNS record in local cache.
+        Search DNS record in local cache.
+        :param domain_list: list of domain_name
+        :param dns_type: str
         """
-        if len(domain_list) > 1:
-            if domain_list[-1] not in dns_dict:
-                dns_dict[domain_list[-1]] = {}
-            insert(dns_dict[domain_list.pop()], domain_list, record)
-        else:
-            dns_dict[domain_list[-1]] = record
+        d = dns_dict
+        n = domain_list
+        while n:
+            if n[-1] not in d:
+                return self.query(dns_dict, domain_list.join('.'), dns_type)
+            else:
+                d = d[n.pop()]
+        if dns_type in d:
+            return d[dns_type]
+        for i in DNS_TYPES:
+            if i in d:
+                return d[i]
+        return None
 
-    def search(dns_dict, domain_list):
-        """Search DNS record in local cache."""
-        if domain_list[-1] not in dns_dict:
-            return None
-        elif len(domain_list) > 1:
-            return search(dns_dict[domain_list.pop()], domain_list)
-        elif not isinstance(dns_dict[domain_list[-1]], dict):
-            return dns_dict[domain_list[-1]]
-        else:
-            return query(dns_dict, domain_list.join('.'))
-
-    def update(dns_dict, domain_list, record):
-        """Update DNS record in local cache."""
-        if domain_list[-1] not in dns_dict:
-            return False
-        elif len(domain_list) > 1:
-            return update(dns_dict[domain_list.pop()], domain_list, record)
-        else:
-            dns_dict[domain_list[-1]] = record
-
-    def query(dns_dict, domain_name, dns_type):
-        """Query Cloudflare DNS server."""
+    def query(self, dns_dict, domain_name, dns_type):
+        """
+        Query Cloudflare DNS server and insert new record to cache.
+        :param domain_name: str
+        :param dns_type: str, e.g., 'A', 'NS'
+        """
         base_url = 'https://cloudflare-dns.com/dns-query?'
         url = base_url + 'name=' + domain_name + '&type=' + dns_type
         r = requests.get(url, headers={'accept': 'application/dns-json'})
@@ -77,5 +75,28 @@ class DNSPacket(DNSRecord):
             record = []
             for item in answer:
                 record.append(item['data'])
-            insert(dns_dict, domain_name.split('.'), record)
+            self.insert(dns_dict, [dns_type] +
+                        domain_name.split('.'), record)
             return record
+
+    def insert(self, dns_dict, domain_list, record):
+        """
+        Insert and save DNS record in local cache.
+        :param domain_list: list of [dns_type + domain_name]
+        :param record: list of DNS record, e.g., ['1.1.1.1', '1.1.2.2']
+        """
+        if len(domain_list) > 1:
+            if domain_list[-1] not in dns_dict:
+                dns_dict[domain_list[-1]] = {}
+            self.insert(dns_dict[domain_list.pop()], domain_list, record)
+        else:
+            dns_dict[domain_list[-1]] = record
+
+    def update(self, dns_dict, domain_list, record):
+        """Update DNS record in local cache."""
+        if domain_list[-1] not in dns_dict:
+            return False
+        elif len(domain_list) > 1:
+            return self.update(dns_dict[domain_list.pop()], domain_list, record)
+        else:
+            dns_dict[domain_list[-1]] = record
