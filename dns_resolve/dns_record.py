@@ -1,4 +1,3 @@
-# %%
 import json
 import requests
 from dnslib.dns import *
@@ -21,6 +20,11 @@ class DNSPacket(DNSRecord):
         super().__init__(header, questions, rr, q, a, auth, ar)
         self.domain_list, self.dns_type, self.dns_class = self.get_question()
         self.id = self.get_header()
+
+    def reply(self, ra=1, aa=1):
+        super().reply(ra=1, aa=1)
+        return DNSPacket(DNSHeader(id=self.header.id, bitmap=self.header.bitmap,
+                                   qr=1, ra=ra, aa=aa), q=self.q)
 
     def get_header(self):
         """
@@ -113,11 +117,3 @@ class DNSPacket(DNSRecord):
             return self.update(dns_dict[domain_list.pop()], domain_list, record)
         else:
             dns_dict[domain_list[-1]] = record
-
-
-data = b'\xd5\x01\x01 \x00\x01\x00\x00\x00\x00\x00\x01\x04bing\x03com\x00\x00\x01\x00\x01\x00\x00)\x10\x00\x00\x00\x00\x00\x00\x0c\x00\n\x00\x08N\x00\xfe\xdf\x19\xfejp'
-d = DNSPacket.parse(data)
-dd = {}
-d.set_answer(dd)
-print(dd)
-print(d)
