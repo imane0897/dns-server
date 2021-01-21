@@ -74,7 +74,7 @@ class DNSPacket(DNSRecord):
         for i in DNS_TYPES:
             if i in d:
                 return d[i]
-        return []
+        return self.query(dns_dict, '.'.join(n))
 
     def query(self, dns_dict, domain_name):
         """
