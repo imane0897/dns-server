@@ -53,10 +53,8 @@ class DNSPacket(DNSRecord):
         """
         record = self.search(dns_dict)
         for i in record:
-            # print(self.domain_list)
             answer = '.'.join(self.domain_list) + ' ' + \
                 self.dns_type + ' ' + i
-            print(answer)
             self.add_answer(*RR.fromZone(answer))
 
     def search(self, dns_dict):
@@ -65,7 +63,7 @@ class DNSPacket(DNSRecord):
         :returns: list of DNS records, e.g., ['1.1.1.1', '1.1.2.2']
         """
         d = dns_dict
-        n = self.domain_list
+        n = self.domain_list.copy()
         while n:
             if n[-1] not in d:
                 return self.query(dns_dict, '.'.join(n))
