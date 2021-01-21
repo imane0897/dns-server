@@ -51,15 +51,17 @@ class DNSPacket(DNSRecord):
         add_answer(RR("abc.com",QTYPE.CNAME,ttl=60,rdata=CNAME("ns.abc.com")))
         """
         record = self.search(dns_dict, self.domain_list, self.dns_type)
-        answer = '.'.join(self.domain_list) + ' ' + \
-            self.dns_type + ' ' + ' '.join(record)
-        self.add_answer(*RR.fromZone(answer))
+        for i in record:
+            answer = '.'.join(self.domain_list) + ' ' + \
+                self.dns_type + ' ' + ' '.join(record)
+            self.add_answer(*RR.fromZone(answer))
 
     def search(self, dns_dict, domain_list, dns_type):
         """
         Search DNS record in local cache.
         :param domain_list: list of domain_name
         :param dns_type: str
+        :returns: list of DNS records, e.g., ['1.1.1.1', '1.1.2.2']
         """
         d = dns_dict
         n = domain_list
@@ -73,7 +75,7 @@ class DNSPacket(DNSRecord):
         for i in DNS_TYPES:
             if i in d:
                 return d[i]
-        return None
+        return []
 
     def query(self, dns_dict, domain_name, dns_type):
         """
@@ -100,7 +102,7 @@ class DNSPacket(DNSRecord):
         """
         Insert and save DNS record in local cache.
         :param domain_list: list of [dns_type + domain_name]
-        :param record: list of DNS record, e.g., ['1.1.1.1', '1.1.2.2']
+        :param record: list of DNS records, e.g., ['1.1.1.1', '1.1.2.2']
         """
         if len(domain_list) > 1:
             if domain_list[-1] not in dns_dict:
