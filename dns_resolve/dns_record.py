@@ -16,6 +16,7 @@ class DNSPacket(DNSRecord):
         """
         :param header: dnslib.dns.DNSHeader
         :param questions: list
+        dns_type: str, e.g., 'A', 'NS'
         """
         super().__init__(header, questions, rr, q, a, auth, ar)
         self.domain_list, self.dns_type, self.dns_class = self.get_question()
@@ -50,51 +51,50 @@ class DNSPacket(DNSRecord):
         add_answer(*RR.fromZone("abc.com A 1.2.3.4"))
         add_answer(RR("abc.com",QTYPE.CNAME,ttl=60,rdata=CNAME("ns.abc.com")))
         """
-        record = self.search(dns_dict, self.domain_list, self.dns_type)
+        record = self.search(dns_dict)
         for i in record:
+            # print(self.domain_list)
             answer = '.'.join(self.domain_list) + ' ' + \
-                self.dns_type + ' ' + ' '.join(record)
+                self.dns_type + ' ' + i
+            print(answer)
             self.add_answer(*RR.fromZone(answer))
 
-    def search(self, dns_dict, domain_list, dns_type):
+    def search(self, dns_dict):
         """
         Search DNS record in local cache.
-        :param domain_list: list of domain_name
-        :param dns_type: str
         :returns: list of DNS records, e.g., ['1.1.1.1', '1.1.2.2']
         """
         d = dns_dict
-        n = domain_list
+        n = self.domain_list
         while n:
             if n[-1] not in d:
-                return self.query(dns_dict, '.'.join(domain_list), dns_type)
+                return self.query(dns_dict, '.'.join(n))
             else:
                 d = d[n.pop()]
-        if dns_type in d:
-            return d[dns_type]
+        if self.dns_type in d:
+            return d[self.dns_type]
         for i in DNS_TYPES:
             if i in d:
                 return d[i]
         return []
 
-    def query(self, dns_dict, domain_name, dns_type):
+    def query(self, dns_dict, domain_name):
         """
         Query Cloudflare DNS server and insert new record to cache.
         :param domain_name: str
-        :param dns_type: str, e.g., 'A', 'NS'
         """
         base_url = 'https://cloudflare-dns.com/dns-query?'
-        url = base_url + 'name=' + domain_name + '&type=' + dns_type
+        url = base_url + 'name=' + domain_name + '&type=' + self.dns_type
         r = requests.get(url, headers={'accept': 'application/dns-json'})
         try:
             answer = r.json()['Answer']
         except KeyError:
-            return None
+            return []
         else:
             record = []
             for item in answer:
                 record.append(item['data'])
-            self.insert(dns_dict, [dns_type] +
+            self.insert(dns_dict, [self.dns_type] +
                         domain_name.split('.'), record)
             return record
 
