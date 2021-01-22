@@ -21,6 +21,7 @@ class DNSPacket(DNSRecord):
         super().__init__(header, questions, rr, q, a, auth, ar)
         self.domain_list, self.dns_type, self.dns_class = self.get_question()
         self.id = self.get_header()
+        self.auth_flag = False
 
     def reply(self, ra=1, aa=1):
         super().reply(ra=1, aa=1)
@@ -69,28 +70,34 @@ class DNSPacket(DNSRecord):
         n = self.domain_list.copy()
         while n:
             if n[-1] not in d:
-                return self.query(dns_dict)
+                return self.query(dns_dict, self.dns_type)
             else:
                 d = d[n.pop()]
         if self.dns_type in d:
             return d[self.dns_type]
-        return self.query(dns_dict, '.'.join(n))
+        return self.query(dns_dict, self.dns_type)
 
-    def query(self, dns_dict):
+    def query(self, dns_dict, dns_type):
         """Query Cloudflare DNS server and insert new record to cache."""
         base_url = 'https://cloudflare-dns.com/dns-query?'
         domain_name = '.'.join(self.domain_list)
-        url = base_url + 'name=' + domain_name + '&type=' + self.dns_type
+        url = base_url + 'name=' + domain_name + '&type=' + dns_type
         r = requests.get(url, headers={'accept': 'application/dns-json'})
         try:
             answer = r.json()['Answer']
         except KeyError:
-            return []
+            try:
+                auth = r.json()['Authority']
+            except KeyError:
+                return []
+            else:
+                self.auth_flag = True
+                return auth
         else:
             record = []
             for item in answer:
                 record.append(item['data'])
-            self.insert(dns_dict, [self.dns_type] +
+            self.insert(dns_dict, [dns_type] +
                         domain_name.split('.'), record)
             return record
 
