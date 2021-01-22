@@ -14,7 +14,7 @@ DNS_TYPES = ['A', 'NS', 'CNAME', 'SOA', 'NULL', 'PTR', 'HINFO', 'MX', 'TXT',
 class DNSPacket(DNSRecord):
     def __init__(self, header=None, questions=None, rr=None, q=None, a=None, auth=None, ar=None):
         """
-        :param header: dnslib.dns.DNSHeader
+        :param header   : dnslib.dns.DNSHeader
         :param questions: list
         dns_type: str, e.g., 'A', 'NS'
         """
@@ -105,7 +105,7 @@ class DNSPacket(DNSRecord):
         """
         Insert and save DNS record in local cache.
         :param domain_list: list of [dns_type + domain_name]
-        :param record: list of DNS records, e.g., ['1.1.1.1', '1.1.2.2']
+        :param record     : list of DNS records, e.g., ['1.1.1.1', '1.1.2.2']
         """
         if len(domain_list) > 1:
             if domain_list[-1] not in dns_dict:

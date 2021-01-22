@@ -3,6 +3,11 @@ from dns_resolve import *
 
 IP = '127.0.0.1'
 PORT = 8123
+# Trier tree structure
+# :key  : domain name, DNS type
+# :value: DNS records in dict
+#       Answer={"name":"google.com","type":1,"TTL":161,"data":"172.217.11.78"}
+#       Authority={"name":"com","type":6,"TTL":670,"data":"a.gtld-servers.net. nstld.verisign-grs.com. 1611319120 1800 900 604800 86400"}
 DNS_CACHE = {}
 
 
