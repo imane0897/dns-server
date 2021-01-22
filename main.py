@@ -15,7 +15,7 @@ def main():
         data, addr = sock.recvfrom(1024)
         q = DNSPacket.parse(data)
         a = q.reply()
-        a.set_answer(DNS_CACHE)
+        a.set_reply(DNS_CACHE)
         sock.sendto(a.pack(), addr)
 
 

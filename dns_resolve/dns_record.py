@@ -45,14 +45,17 @@ class DNSPacket(DNSRecord):
         else:
             return None, None, None
 
-    def set_answer(self, dns_dict):
+    def set_reply(self, dns_dict):
+        """Set answer section in DNS packet."""
+        self.set_answer(self.search(dns_dict))
+
+    def set_answer(self, records):
         """
-        Set answer section in DNS packet.
-        add_answer(*RR.fromZone("abc.com A 1.2.3.4"))
-        add_answer(RR("abc.com",QTYPE.CNAME,ttl=60,rdata=CNAME("ns.abc.com")))
+        Add answers:
+            add_answer(*RR.fromZone("abc.com A 1.2.3.4"))
+            add_answer(RR("abc.com",QTYPE.CNAME,ttl=60,rdata=CNAME("ns.abc.com")))
         """
-        record = self.search(dns_dict)
-        for i in record:
+        for i in records:
             answer = '.'.join(self.domain_list) + ' ' + \
                 self.dns_type + ' ' + i
             self.add_answer(*RR.fromZone(answer))
@@ -66,22 +69,17 @@ class DNSPacket(DNSRecord):
         n = self.domain_list.copy()
         while n:
             if n[-1] not in d:
-                return self.query(dns_dict, '.'.join(n))
+                return self.query(dns_dict)
             else:
                 d = d[n.pop()]
         if self.dns_type in d:
             return d[self.dns_type]
-        for i in DNS_TYPES:
-            if i in d:
-                return d[i]
         return self.query(dns_dict, '.'.join(n))
 
-    def query(self, dns_dict, domain_name):
-        """
-        Query Cloudflare DNS server and insert new record to cache.
-        :param domain_name: str
-        """
+    def query(self, dns_dict):
+        """Query Cloudflare DNS server and insert new record to cache."""
         base_url = 'https://cloudflare-dns.com/dns-query?'
+        domain_name = '.'.join(self.domain_list)
         url = base_url + 'name=' + domain_name + '&type=' + self.dns_type
         r = requests.get(url, headers={'accept': 'application/dns-json'})
         try:
