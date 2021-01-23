@@ -49,6 +49,8 @@ class DNSPacket(DNSRecord):
     def set_reply(self, dns_dict):
         """Set answer section in DNS packet."""
         self.set_answer(self.search(dns_dict))
+        if self.auth_flag:
+            pass
 
     def set_answer(self, records):
         """
@@ -57,9 +59,9 @@ class DNSPacket(DNSRecord):
             add_answer(RR("abc.com",QTYPE.CNAME,ttl=60,rdata=CNAME("ns.abc.com")))
         """
         for i in records:
-            answer = '.'.join(self.domain_list) + ' ' + \
-                self.dns_type + ' ' + i
-            self.add_answer(*RR.fromZone(answer))
+            self.add_answer(
+a
+                *RR.fromZone(i['name'] + ' ' + QTYPE[i['type']] + ' ' + i['data'], ttl=i['TTL']))
 
     def search(self, dns_dict):
         """
@@ -70,42 +72,47 @@ class DNSPacket(DNSRecord):
         n = self.domain_list.copy()
         while n:
             if n[-1] not in d:
-                return self.query(dns_dict, self.dns_type)
+                return self.query(dns_dict)
             else:
                 d = d[n.pop()]
-        if self.dns_type in d:
-            return d[self.dns_type]
-        return self.query(dns_dict, self.dns_type)
+        if not n:
+            return d
+        return self.query(dns_dict)
 
-    def query(self, dns_dict, dns_type):
+    def query(self, dns_dict):
         """Query Cloudflare DNS server and insert new record to cache."""
         base_url = 'https://cloudflare-dns.com/dns-query?'
         domain_name = '.'.join(self.domain_list)
-        url = base_url + 'name=' + domain_name + '&type=' + dns_type
-        r = requests.get(url, headers={'accept': 'application/dns-json'})
+        url = base_url + 'name=' + domain_name + '&type=' + self.dns_type
         try:
-            answer = r.json()['Answer']
-        except KeyError:
-            try:
-                auth = r.json()['Authority']
-            except KeyError:
-                return []
-            else:
-                self.auth_flag = True
-                return auth
+            r = requests.get(
+                url, headers={'accept': 'application/dns-json'}).json()
+        except requests.exceptions.ProxyError:
+            return []
         else:
-            record = []
-            for item in answer:
-                record.append(item['data'])
-            self.insert(dns_dict, [dns_type] +
-                        domain_name.split('.'), record)
-            return record
+            try:
+                answer = r['Answer']
+            except KeyError:
+                try:
+                    auth = r.json()['Authority']
+                except KeyError:
+                    return []
+                else:
+                    self.auth_flag = True
+                    for i in auth:
+                        self.insert(dns_dict, self.domain_list, i)
+                    return auth
+            else:
+                for i in answer:
+                    self.insert(dns_dict, self.domain_list, i)
+                return answer
 
     def insert(self, dns_dict, domain_list, record):
         """
-        Insert and save DNS record in local cache.
-        :param domain_list: list of [dns_type + domain_name]
-        :param record     : list of DNS records, e.g., ['1.1.1.1', '1.1.2.2']
+        Insert and save DNS records in local cache.
+        :param domain_list: list of domain_name split by dot
+        :param record     : dict of DNS records, {"name":"google.com", "type":1,
+                                            "TTL":161,"data":"172.217.11.78"}
         """
         if len(domain_list) > 1:
             if domain_list[-1] not in dns_dict:
@@ -115,6 +122,7 @@ class DNSPacket(DNSRecord):
             dns_dict[domain_list[-1]] = record
 
     def update(self, dns_dict, domain_list, record):
+        # TODO:
         """Update DNS record in local cache."""
         if domain_list[-1] not in dns_dict:
             return False
