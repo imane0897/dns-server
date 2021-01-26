@@ -58,10 +58,13 @@ class DNSPacket(DNSRecord):
             add_answer(*RR.fromZone("abc.com A 1.2.3.4"))
             add_answer(RR("abc.com",QTYPE.CNAME,ttl=60,rdata=CNAME("ns.abc.com")))
         """
-        for i in records:
+        if isinstance(records, list):
+            for i in records:
+                self.add_answer(
+                    *RR.fromZone(i['name'] + ' ' + QTYPE[i['type']] + ' ' + i['data'], ttl=i['TTL']))
+        else:
             self.add_answer(
-a
-                *RR.fromZone(i['name'] + ' ' + QTYPE[i['type']] + ' ' + i['data'], ttl=i['TTL']))
+                *RR.fromZone(records['name'] + ' ' + QTYPE[records['type']] + ' ' + records['data'], ttl=records['TTL']))
 
     def search(self, dns_dict):
         """
