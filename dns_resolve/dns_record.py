@@ -21,7 +21,6 @@ class DNSPacket(DNSRecord):
         super().__init__(header, questions, rr, q, a, auth, ar)
         self.domain_list, self.dns_type, self.dns_class = self.get_question()
         self.id = self.get_header()
-        self.auth_flag = False
 
     def reply(self, ra=1, aa=1):
         super().reply(ra=1, aa=1)
@@ -49,8 +48,6 @@ class DNSPacket(DNSRecord):
     def set_reply(self, dns_dict):
         """Set answer section in DNS packet."""
         self.set_answer(self.search(dns_dict))
-        if self.auth_flag:
-            pass
 
     def set_answer(self, records):
         """
@@ -101,7 +98,6 @@ class DNSPacket(DNSRecord):
                 except KeyError:
                     return []
                 else:
-                    self.auth_flag = True
                     for i in auth:
                         self.insert(dns_dict, self.domain_list, i)
                     return auth
