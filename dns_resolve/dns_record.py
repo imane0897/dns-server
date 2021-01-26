@@ -78,7 +78,7 @@ class DNSPacket(DNSRecord):
                 return self.query(dns_dict)
             else:
                 d = d[n.pop()]
-        if not n:
+        if not n and 'name' in d:
             return d
         return self.query(dns_dict)
 
@@ -97,7 +97,7 @@ class DNSPacket(DNSRecord):
                 answer = r['Answer']
             except KeyError:
                 try:
-                    auth = r.json()['Authority']
+                    auth = r['Authority']
                 except KeyError:
                     return []
                 else:
