@@ -81,7 +81,20 @@ class DNSPacket(DNSRecord):
         return self.query(dns_dict)
 
     def query(self, dns_dict):
-        """Query Cloudflare DNS server and insert new record to cache."""
+        """
+        Query Cloudflare DNS server and insert new record to cache.
+        :var r:
+        {'Status': 0,
+        'TC': False,
+        'RD': True,
+        'RA': True,
+        'AD': False,
+        'CD': False,
+        'Question': [{'name': 'qq.com', 'type': 1}],
+        'Answer': [{'name': 'qq.com', 'type': 1, 'TTL': 59, 'data': '125.39.52.26'},
+        {'name': 'qq.com', 'type': 1, 'TTL': 59, 'data': '58.250.137.36'},
+        {'name': 'qq.com', 'type': 1, 'TTL': 59, 'data': '58.247.214.47'}]}
+        """
         base_url = 'https://cloudflare-dns.com/dns-query?'
         domain_name = '.'.join(self.domain_list)
         url = base_url + 'name=' + domain_name + '&type=' + self.dns_type
