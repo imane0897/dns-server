@@ -1,4 +1,5 @@
 import json
+import time
 import requests
 from dnslib.dns import *
 
@@ -75,7 +76,7 @@ class DNSPacket(DNSRecord):
                 return self.query(dns_dict)
             else:
                 d = d[n.pop()]
-        if not n and 'name' in d:
+        if not n and 'name' in d and int(time.time()) - d['time'] < d['TTL']:
             return d
         return self.query(dns_dict)
 
@@ -111,21 +112,12 @@ class DNSPacket(DNSRecord):
         Insert and save DNS records in local cache.
         :param domain_list: list of domain_name split by dot
         :param record     : dict of DNS records, {"name":"google.com", "type":1,
-                                            "TTL":161,"data":"172.217.11.78"}
+                        "TTL":161,"data":"172.217.11.78", "time":_current_time}
         """
         if len(domain_list) > 1:
             if domain_list[-1] not in dns_dict:
                 dns_dict[domain_list[-1]] = {}
             self.insert(dns_dict[domain_list.pop()], domain_list, record)
         else:
-            dns_dict[domain_list[-1]] = record
-
-    def update(self, dns_dict, domain_list, record):
-        # TODO:
-        """Update DNS record in local cache."""
-        if domain_list[-1] not in dns_dict:
-            return False
-        elif len(domain_list) > 1:
-            return self.update(dns_dict[domain_list.pop()], domain_list, record)
-        else:
+            record['time'] = int(time.time())
             dns_dict[domain_list[-1]] = record
