@@ -55,14 +55,11 @@ class DNSPacket(DNSRecord):
         Add answers:
             add_answer(*RR.fromZone("abc.com A 1.2.3.4"))
             add_answer(RR("abc.com",QTYPE.CNAME,ttl=60,rdata=CNAME("ns.abc.com")))
+        :param records: list of DNS answer
         """
-        if isinstance(records, list):
-            for i in records:
-                self.add_answer(
-                    *RR.fromZone(i['name'] + ' ' + QTYPE[i['type']] + ' ' + i['data'], ttl=i['TTL']))
-        else:
+        for i in records:
             self.add_answer(
-                *RR.fromZone(records['name'] + ' ' + QTYPE[records['type']] + ' ' + records['data'], ttl=records['TTL']))
+                *RR.fromZone(i['name'] + ' ' + QTYPE[i['type']] + ' ' + i['data'], ttl=i['TTL']))
 
     def search(self, dns_dict):
         """
@@ -76,7 +73,8 @@ class DNSPacket(DNSRecord):
                 return self.query(dns_dict)
             else:
                 d = d[n.pop()]
-        if not n and 'name' in d and int(time.time()) - d['time'] < d['TTL']:
+        if not n and isinstance(d, list):
+            # now d is value, not dict
             return d
         return self.query(dns_dict)
 
@@ -112,20 +110,17 @@ class DNSPacket(DNSRecord):
                 except KeyError:
                     return []
                 else:
-                    for i in auth:
-                        self.insert(dns_dict, self.domain_list, i)
-                    return auth
+                    self.insert(dns_dict, self.domain_list, auth)
             else:
-                for i in answer:
-                    self.insert(dns_dict, self.domain_list, i)
-                return answer
+                self.insert(dns_dict, self.domain_list, answer)
 
     def insert(self, dns_dict, domain_list, record):
         """
         Insert and save DNS records in local cache.
         :param domain_list: list of domain_name split by dot
-        :param record     : dict of DNS records, {"name":"google.com", "type":1,
-                        "TTL":161,"data":"172.217.11.78", "time":_current_time}
+        :param record     : list of DNS records, [{"name":"google.com", 
+                            "type":1, "TTL":161,"data":"172.217.11.78", 
+                            "time":_current_time}]
         """
         n = domain_list.copy()
         if len(n) > 1:
@@ -133,5 +128,7 @@ class DNSPacket(DNSRecord):
                 dns_dict[n[-1]] = {}
             self.insert(dns_dict[n.pop()], n, record)
         else:
-            record['time'] = int(time.time())
+            t = int(time.time())
+            for i in record:
+                i['time'] = t
             dns_dict[n[-1]] = record
