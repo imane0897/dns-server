@@ -22,10 +22,11 @@ def clear_record(dns_dict, keys):
     :param keys    : list of dns_dict's keys
     """
     for k in keys:
-        if 'TTL' not in dns_dict[k]:
+        if not isinstance(dns_dict[k], list):
             clear_record(dns_dict[k], list(dns_dict[k].keys()))
         else:
-            if int(time.time()) - dns_dict[k]['time'] >= dns_dict[k]['TTL']:
+            r = dns_dict[k][0]
+            if int(time.time()) - r['time'] >= r['TTL']:
                 del dns_dict[k]
 
 
@@ -34,6 +35,7 @@ def clear():
     while True:
         time.sleep(100)
         clear_record(DNS_CACHE, list(DNS_CACHE.keys()))
+        print(DNS_CACHE)
 
 
 def server(sock):
