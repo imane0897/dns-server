@@ -127,10 +127,11 @@ class DNSPacket(DNSRecord):
         :param record     : dict of DNS records, {"name":"google.com", "type":1,
                         "TTL":161,"data":"172.217.11.78", "time":_current_time}
         """
-        if len(domain_list) > 1:
-            if domain_list[-1] not in dns_dict:
-                dns_dict[domain_list[-1]] = {}
-            self.insert(dns_dict[domain_list.pop()], domain_list, record)
+        n = domain_list.copy()
+        if len(n) > 1:
+            if n[-1] not in dns_dict:
+                dns_dict[n[-1]] = {}
+            self.insert(dns_dict[n.pop()], n, record)
         else:
             record['time'] = int(time.time())
-            dns_dict[domain_list[-1]] = record
+            dns_dict[n[-1]] = record
