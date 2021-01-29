@@ -74,9 +74,11 @@ class DNSPacket(DNSRecord):
             else:
                 d = d[n.pop()]
         if not n and isinstance(d, list):
-            # now d is value, not dict
-            return d
-        return self.query(dns_dict)
+            # now d is list (dict value), not dict
+            for i in d:
+                if int(time.time()) - i['time'] > i['TTL']:
+                    return self.query(dns_dict)
+        return d
 
     def query(self, dns_dict):
         """
@@ -111,8 +113,10 @@ class DNSPacket(DNSRecord):
                     return []
                 else:
                     self.insert(dns_dict, self.domain_list, auth)
+                    return auth
             else:
                 self.insert(dns_dict, self.domain_list, answer)
+                return answer
 
     def insert(self, dns_dict, domain_list, record):
         """
